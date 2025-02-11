@@ -1,6 +1,7 @@
 # Apply ReLU to feature extraction
-numbers = []
-binary_numbers = [1 if num > 0.5 else 0 for num in numbers]
+class ReLu:
 
-for num in binary_numbers:
-    print(num)
+    @staticmethod
+    def apply(tensor):
+        binary_numbers = [1 if num > 0.5 else 0 for num in tensor]
+        return binary_numbers
