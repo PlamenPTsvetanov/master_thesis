@@ -1,5 +1,6 @@
 import os
 import time
+import torch
 from pinecone import Pinecone, ServerlessSpec
 
 PINECONE_API_KEY = os.environ['PINECONE_API_KEY']
@@ -14,7 +15,8 @@ class PineconeManager:
             pc.create_index(name=index_name, dimension=2048, metric="cosine",
                             spec=ServerlessSpec(cloud="aws", region="us-east-1"))
 
-    def upsert_data(self, image_id, data):
+    @staticmethod
+    def upsert_data(image_id, data):
         while not pc.describe_index(index_name).status['ready']:
             time.sleep(1)
         index = pc.Index(index_name)
@@ -25,10 +27,13 @@ class PineconeManager:
         }]
         index.upsert(vector)
 
-    def get_similar_data(self, data):
+    @staticmethod
+    def get_similar_data(data):
+        if isinstance(data, torch.Tensor):
+            data = data.cpu().numpy().tolist()
+
         index = pc.Index(index_name)
         results = index.query(
-            namespace="ns1",
             vector=data,
             top_k=5,
             include_values=False,

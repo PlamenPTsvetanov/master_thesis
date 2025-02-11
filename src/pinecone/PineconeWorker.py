@@ -1,7 +1,8 @@
 import torch
 from PIL import Image
 from torchvision import transforms
-from ..configuration.Logger import Logger as log
+
+from src.configuration.Logger import Logger as log
 
 
 class PineconeWorker:
@@ -19,11 +20,11 @@ class PineconeWorker:
             cls._model.eval()
 
             log.info("Model is ready to use.")
-            return cls._instance
+        return cls._instance
 
     @staticmethod
-    def process_image(image_path):
-        log.info("Processing image with path %s".format(image_path))
+    def process_frame(image_path):
+        log.info(f"Processing image with path %{image_path}")
         input_image = Image.open(image_path)
         preprocess = transforms.Compose([
             transforms.Resize(256),
@@ -35,6 +36,7 @@ class PineconeWorker:
         input_batch = input_tensor.unsqueeze(0)
 
         generator = PineconeWorker()
+        print(generator)
         if torch.cuda.is_available():
             input_batch = input_batch.to('cuda')
             generator._model.to('cuda')
@@ -43,5 +45,5 @@ class PineconeWorker:
             output = generator._model(input_batch)
 
         flatten_tensor = torch.flatten(output[0])
-        log.debug("Retrieved flatten tensor from image %s".format(flatten_tensor))
+        log.debug(f"Retrieved flatten tensor from image %{flatten_tensor}")
         return flatten_tensor
