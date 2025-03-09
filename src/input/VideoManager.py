@@ -30,14 +30,10 @@ class VideoManager:
 
         return frames
 
-pm = PineconeManager()
-vm = VideoManager()
+# pm = PineconeManager()
+# vm = VideoManager()
 # frames = vm.slice_to_frames("butterflies_960p.mp4")
 #
-# print(frames)
 # for frame in frames:
 #     vector = PineconeWorker.process_frame(frame)
 #     PineconeManager.upsert_data(uuid.uuid4().__str__(), vector)
-
-vector = PineconeWorker.process_frame(f"D:\\University\\Masters\\Thesis\\resources\\frames\\frame0.jpg")
-print(PineconeManager.get_similar_data(vector))
