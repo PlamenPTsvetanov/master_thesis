@@ -1,17 +1,23 @@
-# Use an official Python base image
-FROM python:3.12
+FROM python:3.13-slim
 
-# Set the working directory in the container
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Copy requirements file
-COPY requirements.txt .
+COPY requirements.txt ./
+COPY src ./src
 
-# Install dependencies
+RUN mkdir resources
+RUN mkdir resources/videos
+RUN mkdir resources/frames
+
+
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application files
-COPY src .
+ENV PYTHONPATH="/app"
+ENV PYTHONUNBUFFERED=1
 
-# Command to run the Kafka consumer
-CMD ["python", "consumer.py"]
+CMD ["sh", "-c", "python src/kafka/VideoCreatedKafkaConsumer.py && tail -f /dev/null"]
