@@ -27,9 +27,8 @@ class VideoCreatedKafkaConsumer():
                     continue
 
                 print(f"Received message: {msg.value().decode('utf-8')}")
-                json.loads(msg.value().decode('utf-8'))
-
-                # gateway.process_video_created()
+                video_created_json = json.loads(msg.value().decode('utf-8'))
+                gateway.process_video_created(video_created_json["location"])
 
         except KeyboardInterrupt:
             print("Consuming interrupted.")

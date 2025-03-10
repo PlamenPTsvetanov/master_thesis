@@ -4,15 +4,14 @@ import cv2 as cv
 
 from src.configuration.Logger import Logger as log
 
-VIDEO_STORE_LOCATION = os.environ["VIDEO_STORE_LOCATION"]
 IMAGE_STORE_LOCATION = os.environ["IMAGE_STORE_LOCATION"]
 
 
 class VideoManager:
     @staticmethod
-    def slice_to_frames(video_name):
+    def slice_to_frames(video_location):
         frames = []
-        video = cv.VideoCapture(os.path.join(VIDEO_STORE_LOCATION, video_name))
+        video = cv.VideoCapture(video_location)
         read, image = video.read()
         count = 0
         while read:

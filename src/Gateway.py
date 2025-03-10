@@ -11,9 +11,9 @@ pinecone_manager = PineconeManager()
 
 class Gateway:
     @staticmethod
-    def process_video_created(video_name):
-        frames = video_manager.slice_to_frames(video_name)
+    def process_video_created(video_location):
+        frames = video_manager.slice_to_frames(video_location)
 
         for frame in frames:
-            vector = pinecone_worker.process_frames(frame)
-            pinecone_manager.upsert_data(uuid.uuid4(), vector)
+            vector = pinecone_worker.process_frame(frame)
+            pinecone_manager.upsert_data(uuid.uuid4().__str__(), vector)

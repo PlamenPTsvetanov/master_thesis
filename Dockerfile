@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.13-bookworm
 
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
@@ -8,16 +8,14 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY requirements.txt ./
-COPY src ./src
-
-RUN mkdir resources
-RUN mkdir resources/videos
-RUN mkdir resources/frames
-
 
 RUN pip install --no-cache-dir -r requirements.txt
+
+COPY src ./src
+
+RUN mkdir -p resources/videos resources/frames
 
 ENV PYTHONPATH="/app"
 ENV PYTHONUNBUFFERED=1
 
-CMD ["sh", "-c", "python src/kafka/VideoCreatedKafkaConsumer.py && tail -f /dev/null"]
+CMD ["python", "src/kafka/VideoCreatedKafkaConsumer.py"]
