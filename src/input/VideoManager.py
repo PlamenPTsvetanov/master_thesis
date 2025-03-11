@@ -1,8 +1,11 @@
+import json
 import os
 import uuid
+
 import cv2 as cv
 
 from src.configuration.Logger import Logger as log
+from src.kafka.VideoStatusKafkaProducer import VideoStatusKafkaProducer
 from src.pinecone.PineconeManager import PineconeManager
 from src.pinecone.PineconeWorker import PineconeWorker
 
@@ -40,15 +43,16 @@ class VideoManager:
             vectors = []
             for frame in frames:
                 vector = pinecone_worker.process_frame(frame)
-                vectors.append(vector)
+                vectors.append({"vector": vector, "id": input_video_meta["databaseId"]})
 
             for i in range(0, len(vectors), 6):
                 vector = vectors[i]
-                similarities = pinecone_manager.get_similar_data(vector)
+                similarities = pinecone_manager.get_similar_data(vector["vector"])
                 similarities = [match.score for match in similarities.matches if match.score > 0.90]
 
                 if len(similarities) > 1:
-                    print(len(similarities))
+                    VideoStatusKafkaProducer.produce(
+                        json.dumps({"id": vector["id"], "message": "Similarity score too high! Possible duplicate!"}))
                     raise Exception("Similarity score too high! Possible duplicate!")
 
             for vector in vectors:
