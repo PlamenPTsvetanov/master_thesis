@@ -4,7 +4,7 @@ from confluent_kafka import Consumer, KafkaException
 from confluent_kafka.admin import AdminClient
 from confluent_kafka.cimpl import NewTopic
 
-from src.Gateway import Gateway
+from src.input.VideoManager import VideoManager
 
 BOOTSTRAP_SERVER = os.environ['KAFKA_BOOTSTRAP_SERVERS']
 KAFKA_CONFIG = {
@@ -12,7 +12,7 @@ KAFKA_CONFIG = {
     'group.id': 'dev',
     'auto.offset.reset': 'latest'
 }
-gateway = Gateway()
+video_manager = VideoManager()
 class VideoCreatedKafkaConsumer():
 
     @staticmethod
@@ -28,7 +28,7 @@ class VideoCreatedKafkaConsumer():
 
                 print(f"Received message: {msg.value().decode('utf-8')}")
                 video_created_json = json.loads(msg.value().decode('utf-8'))
-                gateway.process_video_created(video_created_json["location"])
+                video_manager.process_video_created(video_created_json)
 
         except KeyboardInterrupt:
             print("Consuming interrupted.")
@@ -59,7 +59,3 @@ class VideoCreatedKafkaConsumer():
 
         consumer.subscribe([video_created_topic])
         self.consume_messages(consumer)
-
-if __name__ == "__main__":
-    runner = VideoCreatedKafkaConsumer()
-    runner.run()

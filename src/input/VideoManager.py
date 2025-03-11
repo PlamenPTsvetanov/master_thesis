@@ -1,10 +1,15 @@
 import os
-
+import uuid
 import cv2 as cv
 
 from src.configuration.Logger import Logger as log
+from src.pinecone.PineconeManager import PineconeManager
+from src.pinecone.PineconeWorker import PineconeWorker
 
 IMAGE_STORE_LOCATION = os.environ["IMAGE_STORE_LOCATION"]
+
+pinecone_worker = PineconeWorker()
+pinecone_manager = PineconeManager()
 
 
 class VideoManager:
@@ -27,3 +32,31 @@ class VideoManager:
                 break
 
         return frames
+
+    def process_video_created(self, input_video_meta):
+        try:
+            frames = self.slice_to_frames(input_video_meta["location"])
+
+            vectors = []
+            for frame in frames:
+                vector = pinecone_worker.process_frame(frame)
+                vectors.append(vector)
+
+            for i in range(0, len(vectors), 6):
+                vector = vectors[i]
+                similarities = pinecone_manager.get_similar_data(vector)
+                similarities = [match.score for match in similarities.matches if match.score > 0.90]
+
+                if len(similarities) > 1:
+                    print(len(similarities))
+                    raise Exception("Similarity score too high! Possible duplicate!")
+
+            for vector in vectors:
+                self.add_new_video(input_video_meta, vector)
+        except Exception as e:
+            print(e)
+
+    @staticmethod
+    def add_new_video(input_video_meta, vector):
+        meta = {"database_id": input_video_meta["databaseId"]}
+        pinecone_manager.upsert_data(uuid.uuid4().__str__(), vector, meta)

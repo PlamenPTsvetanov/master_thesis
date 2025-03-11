@@ -2,6 +2,7 @@ import os
 import time
 import torch
 from pinecone import Pinecone, ServerlessSpec
+import json
 
 PINECONE_API_KEY = os.environ['PINECONE_API_KEY']
 pc = Pinecone(api_key=PINECONE_API_KEY)
@@ -16,7 +17,7 @@ class PineconeManager:
                             spec=ServerlessSpec(cloud="aws", region="us-east-1"))
 
     @staticmethod
-    def upsert_data(image_id, data):
+    def upsert_data(image_id, data, meta):
         while not pc.describe_index(index_name).status['ready']:
             time.sleep(1)
         index = pc.Index(index_name)
@@ -24,6 +25,7 @@ class PineconeManager:
         vector = [{
             'id': image_id,
             'values': data,
+            "metadata": meta
         }]
         index.upsert(vector)
 
@@ -35,7 +37,7 @@ class PineconeManager:
         index = pc.Index(index_name)
         results = index.query(
             vector=data,
-            top_k=5,
+            top_k=9001, # 5 minutes 30 frames
             include_values=False,
             include_metadata=True
         )

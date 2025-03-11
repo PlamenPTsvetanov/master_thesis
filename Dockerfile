@@ -18,4 +18,4 @@ RUN mkdir -p resources/videos resources/frames
 ENV PYTHONPATH="/app"
 ENV PYTHONUNBUFFERED=1
 
-CMD ["python", "src/kafka/VideoCreatedKafkaConsumer.py"]
+CMD ["python", "src/Gateway.py"]
