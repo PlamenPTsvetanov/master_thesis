@@ -45,18 +45,23 @@ class VideoManager:
                 vector = pinecone_worker.process_frame(frame)
                 vectors.append({"vector": vector, "id": input_video_meta["databaseId"]})
 
-            for i in range(0, len(vectors), 6):
+            for i in range(0, len(vectors), 3):
                 vector = vectors[i]
                 similarities = pinecone_manager.get_similar_data(vector["vector"])
                 similarities = [match.score for match in similarities.matches if match.score > 0.90]
 
                 if len(similarities) > 1:
                     VideoStatusKafkaProducer.produce(
-                        json.dumps({"id": vector["id"], "message": "Similarity score too high! Possible duplicate!"}))
+                        json.dumps({"id": vector["id"], "status": "EXCEPTION",
+                                    "message": "Similarity score too high! Possible duplicate!"}))
                     raise Exception("Similarity score too high! Possible duplicate!")
 
             for vector in vectors:
-                self.add_new_video(input_video_meta, vector)
+                self.add_new_video(input_video_meta, vector['vector'])
+
+            VideoStatusKafkaProducer.produce(
+                json.dumps({"id": input_video_meta["databaseId"], "status": "COMPLETED",
+                            "message": "Successfully added video!"}))
         except Exception as e:
             print(e)
 
