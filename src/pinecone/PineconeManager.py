@@ -30,6 +30,12 @@ class PineconeManager:
         index.upsert(vector)
 
     @staticmethod
+    def delete_data(prefix):
+        index = pc.Index(host="https://image-similarity-khlazmd.svc.aped-4627-b74a.pinecone.io")
+        for ids in index.list(prefix=prefix):
+            index.delete(ids=ids)
+
+    @staticmethod
     def get_similar_data(data):
         if isinstance(data, torch.Tensor):
             data = data.cpu().numpy().tolist()

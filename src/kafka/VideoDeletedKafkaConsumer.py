@@ -1,11 +1,9 @@
-import json
 import os
 
 from confluent_kafka import Consumer
 
-from src.input.VideoManager import VideoManager
 from src.kafka.KafkaAdmin import KafkaAdmin
-
+from src.pinecone.PineconeManager import PineconeManager
 
 BOOTSTRAP_SERVER = os.environ['KAFKA_BOOTSTRAP_SERVERS']
 KAFKA_CONFIG = {
@@ -13,10 +11,10 @@ KAFKA_CONFIG = {
     'group.id': 'dev',
     'auto.offset.reset': 'latest'
 }
-video_manager = VideoManager()
+pinecone_manager = PineconeManager()
 
 
-class VideoCreatedKafkaConsumer():
+class VideoDeletedKafkaConsumer():
 
     @staticmethod
     def consume_messages(consumer):
@@ -30,15 +28,15 @@ class VideoCreatedKafkaConsumer():
                     continue
 
                 print(f"Received message: {msg.value().decode('utf-8')}")
-                video_created_json = json.loads(msg.value().decode('utf-8'))
-                video_manager.process_video_created(video_created_json)
+                video_id_delete = msg.value().decode('utf-8')
+                pinecone_manager.delete_data(video_id_delete)
         finally:
             consumer.close()
 
     def run(self):
-        print("Running video creation consumer")
+        print("Running video deletion consumer")
         consumer = Consumer(KAFKA_CONFIG)
-        video_created_topic = 'video.created'
+        video_created_topic = 'video.deleted'
         video_created_topic = KafkaAdmin.create_if_not_exists(video_created_topic)
 
         consumer.subscribe([video_created_topic])

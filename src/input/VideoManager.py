@@ -68,4 +68,5 @@ class VideoManager:
     @staticmethod
     def add_new_video(input_video_meta, vector):
         meta = {"database_id": input_video_meta["databaseId"]}
-        pinecone_manager.upsert_data(uuid.uuid4().__str__(), vector, meta)
+        id_with_parent = input_video_meta["databaseId"] + "#" + str(uuid.uuid4())
+        pinecone_manager.upsert_data(id_with_parent, vector, meta)
