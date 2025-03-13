@@ -37,6 +37,8 @@ class VideoManager:
         return frames
 
     def process_video_created(self, input_video_meta):
+        status = "COMPLETED"
+        message = "Successfully added video!"
         try:
             frames = self.slice_to_frames(input_video_meta["location"])
 
@@ -48,25 +50,32 @@ class VideoManager:
             for i in range(0, len(vectors), 3):
                 vector = vectors[i]
                 similarities = pinecone_manager.get_similar_data(vector["vector"])
+                filtered = [match for match in similarities.matches]
                 similarities = [match.score for match in similarities.matches if match.score > 0.90]
 
                 if len(similarities) > 1:
-                    VideoStatusKafkaProducer.produce(
-                        json.dumps({"id": vector["id"], "status": "EXCEPTION",
-                                    "message": "Similarity score too high! Possible duplicate!"}))
-                    raise Exception("Similarity score too high! Possible duplicate!")
+                    match = filtered[0]
+                    if match.metadata.get('free_to_use'):
+                        status = "FREE_TO_USE"
+                    else:
+                        status = "EXCEPTION"
+                        message = "Similarity score too high! Possible duplicate!"
 
-            for vector in vectors:
-                self.add_new_video(input_video_meta, vector['vector'])
+            if status not in ["EXCEPTION", "FREE_TO_USE"]:
+                for vector in vectors:
+                    self.add_new_video(input_video_meta, vector['vector'])
 
             VideoStatusKafkaProducer.produce(
-                json.dumps({"id": input_video_meta["databaseId"], "status": "COMPLETED",
-                            "message": "Successfully added video!"}))
+                json.dumps({"id": input_video_meta["databaseId"], "status": status,
+                            "message": message}))
         except Exception as e:
             print(e)
 
     @staticmethod
     def add_new_video(input_video_meta, vector):
-        meta = {"database_id": input_video_meta["databaseId"]}
+        meta = {"database_id": input_video_meta["databaseId"],
+                "free_to_use": input_video_meta["freeToUse"],
+                "is_copyrighted": input_video_meta["isCopyrighted"]
+                }
         id_with_parent = input_video_meta["databaseId"] + "#" + str(uuid.uuid4())
         pinecone_manager.upsert_data(id_with_parent, vector, meta)
