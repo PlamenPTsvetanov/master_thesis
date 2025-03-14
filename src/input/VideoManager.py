@@ -54,15 +54,28 @@ class VideoManager:
                 filtered = [match for match in similarities.matches]
                 similarities = [match.score for match in similarities.matches if match.score > 0.90]
 
-                if len(similarities) > 0:
-                    match = filtered[0]
-                    if match.metadata.get('free_to_use'):
+                match = filtered[0]
+
+                if input_video_meta["userId"] == match.metadata.get("userId"):
+                    status = "REUPLOAD"
+                    message = "Video already uploaded by this user!"
+                    upload_video = False
+                elif len(similarities) > 0:
+                    if match.metadata.get('free_to_use') and match.metadata.get('is_copyrighted'):
+                        if input_video_meta['description'].contains[match.metadata.get('free_to_use')]:
+                            status = "VALID_REFERENCE"
+                            message = "Video is copyrighted, but contains valid reference."
+                        else:
+                            status = "INVALID_REFERENCE"
+                            message = "Video is copyrighted, but does not contain a valid reference."
+                            upload_video = False
+                    elif match.metadata.get('free_to_use'):
                         status = "FREE_TO_USE"
                         message = "Found similar video, but it's free to use."
                     elif match.metadata.get('is_copyrighted'):
                         status = "COPYRIGHTED"
                         if len(vectors) > 4500:
-                            message = "Copyrighted."
+                            message = "Copyrighted content which doesn't fall inyo fair use."
                             upload_video = False
                         else:
                             message = "Uploading copyrighted content that falls into fair use."
