@@ -47,21 +47,31 @@ class VideoManager:
                 vector = pinecone_worker.process_frame(frame)
                 vectors.append({"vector": vector, "id": input_video_meta["databaseId"]})
 
+            upload_video = True
             for i in range(0, len(vectors), 3):
                 vector = vectors[i]
                 similarities = pinecone_manager.get_similar_data(vector["vector"])
                 filtered = [match for match in similarities.matches]
                 similarities = [match.score for match in similarities.matches if match.score > 0.90]
 
-                if len(similarities) > 1:
+                if len(similarities) > 0:
                     match = filtered[0]
                     if match.metadata.get('free_to_use'):
                         status = "FREE_TO_USE"
+                        message = "Found similar video, but it's free to use."
+                    elif match.metadata.get('is_copyrighted'):
+                        status = "COPYRIGHTED"
+                        if len(vectors) > 4500:
+                            message = "Copyrighted."
+                            upload_video = False
+                        else:
+                            message = "Uploading copyrighted content that falls into fair use."
                     else:
                         status = "EXCEPTION"
                         message = "Similarity score too high! Possible duplicate!"
+                        upload_video = False
 
-            if status not in ["EXCEPTION", "FREE_TO_USE"]:
+            if upload_video:
                 for vector in vectors:
                     self.add_new_video(input_video_meta, vector['vector'])
 
