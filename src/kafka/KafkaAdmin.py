@@ -6,7 +6,7 @@ from confluent_kafka.cimpl import NewTopic
 BOOTSTRAP_SERVER = os.environ['KAFKA_BOOTSTRAP_SERVERS']
 KAFKA_CONFIG = {
     'bootstrap.servers': BOOTSTRAP_SERVER,
-    'group.id': 'dev',
+    'group.id': 'py',
     'auto.offset.reset': 'latest'
 }
 

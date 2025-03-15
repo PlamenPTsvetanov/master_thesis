@@ -8,7 +8,7 @@ from src.pinecone.PineconeManager import PineconeManager
 BOOTSTRAP_SERVER = os.environ['KAFKA_BOOTSTRAP_SERVERS']
 KAFKA_CONFIG = {
     'bootstrap.servers': BOOTSTRAP_SERVER,
-    'group.id': 'dev',
+    'group.id': 'py-deleted',
     'auto.offset.reset': 'latest'
 }
 pinecone_manager = PineconeManager()

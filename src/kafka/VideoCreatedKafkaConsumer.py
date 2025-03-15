@@ -10,7 +10,7 @@ from src.kafka.KafkaAdmin import KafkaAdmin
 BOOTSTRAP_SERVER = os.environ['KAFKA_BOOTSTRAP_SERVERS']
 KAFKA_CONFIG = {
     'bootstrap.servers': BOOTSTRAP_SERVER,
-    'group.id': 'dev',
+    'group.id': 'py-created',
     'auto.offset.reset': 'latest'
 }
 video_manager = VideoManager()
