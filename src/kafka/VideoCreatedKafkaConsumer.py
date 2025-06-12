@@ -5,7 +5,7 @@ from confluent_kafka import Consumer
 
 from src.input.VideoManager import VideoManager
 from src.kafka.KafkaAdmin import KafkaAdmin
-
+from src.configuration.Logger import Logger
 
 BOOTSTRAP_SERVER = os.environ['KAFKA_BOOTSTRAP_SERVERS']
 KAFKA_CONFIG = {
@@ -26,17 +26,17 @@ class VideoCreatedKafkaConsumer():
                 if msg is None:
                     continue
                 if msg.error():
-                    print(f"Consumer error: {msg.error()}")
+                    Logger.warning(f"Consumer problem: {msg.error()}")
                     continue
 
-                print(f"Received message: {msg.value().decode('utf-8')}")
+                Logger.info(f"Received message: {msg.value().decode('utf-8')}")
                 video_created_json = json.loads(msg.value().decode('utf-8'))
                 video_manager.process_video_created(video_created_json)
         finally:
             consumer.close()
 
     def run(self):
-        print("Running video creation consumer")
+        Logger.info("Running video creation consumer")
         consumer = Consumer(KAFKA_CONFIG)
         video_created_topic = 'video.created'
         video_created_topic = KafkaAdmin.create_if_not_exists(video_created_topic)

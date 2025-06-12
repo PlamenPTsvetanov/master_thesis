@@ -43,7 +43,7 @@ class PineconeManager:
         index = pc.Index(index_name)
         results = index.query(
             vector=data,
-            top_k=9001, # 5 minutes 30 frames
+            top_k=4501,
             include_values=False,
             include_metadata=True
         )

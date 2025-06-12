@@ -6,6 +6,7 @@ import cv2 as cv
 from PIL import Image
 
 from src.configuration.Logger import Logger as log
+from pt_deepfake_finder import DeepFakeDetector
 from src.kafka.VideoStatusKafkaProducer import VideoStatusKafkaProducer
 from src.pinecone.PineconeManager import PineconeManager
 from src.pinecone.PineconeWorker import PineconeWorker
@@ -16,7 +17,7 @@ face_cascade = cv.CascadeClassifier('/app/src/input/haarcascade_frontalface_defa
 
 pinecone_worker = PineconeWorker()
 pinecone_manager = PineconeManager()
-
+deepfake_detector = DeepFakeDetector()
 
 class VideoManager:
     @staticmethod
@@ -26,16 +27,12 @@ class VideoManager:
         read, image = video.read()
         count = 0
         while read:
-            path = os.path.join(IMAGE_STORE_LOCATION, f"frame{count}.jpg")
+            path = os.path.join(IMAGE_STORE_LOCATION, f"frame-{uuid.uuid4()}.jpg")
             cv.imwrite(path, image)
-            success, image = video.read()
             log.debug(f"Read frame #{count}")
-
             frames.append(path)
             count += 1
-
-            if count > 5:
-                break
+            read, image = video.read()
 
         return frames
 
@@ -54,7 +51,7 @@ class VideoManager:
                 vectors.append({"vector": vector, "id": input_video_meta["databaseId"]})
 
             video_uploaded = False
-            for i in range(0, len(vectors), 3):
+            for i in range(0, len(vectors)):
                 vector = vectors[i]
                 similarities = pinecone_manager.get_similar_data(vector["vector"])
                 filtered = [match for match in similarities.matches]
@@ -104,11 +101,13 @@ class VideoManager:
         deepfake_message = ""
         found_faces = self.find_faces_crops(frame)
         if len(found_faces) > 0:
-            deepfake_found = False
-            # send for deepfake detection
-            if deepfake_found:
-                deepfake_status = "DEEPFAKE_FOUND"
-                deepfake_message = "Found deepfake content!"
+            for face in found_faces:
+                is_deepfake = deepfake_detector.predict_image(face)
+
+                if is_deepfake == "Deepfake":
+                    deepfake_status = "DEEPFAKE_FOUND"
+                    deepfake_message = "Found deepfake content!"
+                    break
         else:
             deepfake_message = "No faces found!"
         return deepfake_status, deepfake_message
@@ -135,8 +134,14 @@ class VideoManager:
                 w_pad = min(w + 2 * pad, img.shape[1] - x_pad)
                 h_pad = min(h + 2 * pad, img.shape[0] - y_pad)
 
-                face_crops.append(img[y_pad:y_pad + h_pad, x_pad:x_pad + w_pad])
+                cropped_image = img[y_pad:y_pad + h_pad, x_pad:x_pad + w_pad]
+
+                path = os.path.join(IMAGE_STORE_LOCATION, f"face{uuid.uuid4()}.jpg")
+                cv.imwrite(path, cropped_image)
+
+                face_crops.append(path)
         return face_crops
+
     @staticmethod
     def add_new_video(input_video_meta, vector):
         meta = {"database_id": input_video_meta["databaseId"],

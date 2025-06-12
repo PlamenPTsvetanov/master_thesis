@@ -36,7 +36,6 @@ class PineconeWorker:
         input_batch = input_tensor.unsqueeze(0)
 
         generator = PineconeWorker()
-        print(generator)
         if torch.cuda.is_available():
             input_batch = input_batch.to('cuda')
             generator._model.to('cuda')
